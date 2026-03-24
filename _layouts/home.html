@@ -1,0 +1,35 @@
+---
+layout: default
+---
+<section class="hero">
+  <p class="hero-kicker">Personal Blog</p>
+  <h1>{{ site.title }}</h1>
+  <p class="hero-subtitle">{{ site.subtitle }}</p>
+  <p class="hero-intro">{{ page.intro | default: "这里记录代码实践、工具使用和长期学习中的真实笔记。" }}</p>
+</section>
+
+<section class="home-posts" aria-label="最新文章">
+  <div class="section-title-row">
+    <h2>最新文章</h2>
+    <a href="{{ '/archive/' | relative_url }}">查看归档</a>
+  </div>
+
+  <ul class="post-list">
+    {% for post in site.posts limit: 10 %}
+      <li class="post-item">
+        <h3><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h3>
+        <p class="post-meta">
+          <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y-%m-%d" }}</time>
+          {% if post.categories and post.categories.size > 0 %}
+            <span>·</span>
+            <span>{{ post.categories | first }}</span>
+          {% endif %}
+        </p>
+        {% assign summary = post.excerpt | strip_html | normalize_whitespace %}
+        {% if summary != "" %}
+          <p class="post-excerpt">{{ summary }}</p>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</section>
