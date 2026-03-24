@@ -1,0 +1,12 @@
+title: Kirep 的博客
+description: 记录学习、项目和随想
+theme: minima
+lang: zh-CN
+
+author:
+  name: Kirep
+
+header_pages:
+  - about.md
+
+show_excerpts: true
