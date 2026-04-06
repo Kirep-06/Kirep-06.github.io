@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>写文章 - Kirep Notes</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .admin-wrap {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    .admin-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 0.95rem;
+    }
+
+    .field textarea {
+      min-height: 180px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .small-btn {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      border-radius: 0;
+      padding: 6px 10px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.9rem;
+    }
+
+    .small-btn:hover {
+      border-color: #4d5867;
+    }
+
+    .out {
+      margin-top: 10px;
+      border-top: 1px solid var(--line);
+      padding: 10px 0 0;
+    }
+
+    .out h3 {
+      margin: 0 0 6px;
+      font-size: 0.97rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .out pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #dde7f2;
+      font-size: 0.87rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap head-row">
+      <h1 class="title">Write Post</h1>
+      <nav>
+        <a href="./index.html">Blog</a>
+        <a href="./about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="admin-wrap">
+      <div class="admin-grid">
+        <div class="field">
+          <label for="token">后端 Token</label>
+          <input id="token" placeholder="输入 BLOG_ADMIN_TOKEN" />
+        </div>
+
+        <div class="field">
+          <label for="title">标题</label>
+          <input id="title" placeholder="例如：Redis 缓存一致性实战" />
+        </div>
+
+        <div class="field">
+          <label for="date">日期（YYYY-MM-DD）</label>
+          <input id="date" placeholder="2026-04-06" />
+        </div>
+
+        <div class="field">
+          <label for="slug">slug（文件名）</label>
+          <input id="slug" placeholder="redis-cache-consistency" />
+        </div>
+
+        <div class="field">
+          <label for="content">正文（每段空一行）</label>
+          <textarea id="content" placeholder="第一段...\n\n第二段..."></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="generate" class="small-btn" type="button">生成发布内容</button>
+        <button id="verifyToken" class="small-btn" type="button">验证后端 Token</button>
+        <button id="publishApi" class="small-btn" type="button">发布到后端</button>
+        <button id="copyPost" class="small-btn" type="button">复制 posts 条目</button>
+        <button id="copyHtml" class="small-btn" type="button">复制文章 Markdown</button>
+      </div>
+    </section>
+
+    <section class="out">
+      <h3>1. 粘贴到 `posts.json`</h3>
+      <pre id="postEntry">点击“生成发布内容”后出现</pre>
+    </section>
+
+    <section class="out">
+      <h3>2. 新建文章文件（例如 `posts/xxx.md`）</h3>
+      <pre id="htmlOutput">点击“生成发布内容”后出现</pre>
+    </section>
+
+    <section class="out">
+      <h3>3. 后端发布状态</h3>
+      <pre id="apiOutput">启动 Go 后端后，点击“发布到后端”可直接写入本地文件。</pre>
+    </section>
+  </main>
+
+  <script>
+    const titleEl = document.getElementById("title");
+    const dateEl = document.getElementById("date");
+    const slugEl = document.getElementById("slug");
+    const contentEl = document.getElementById("content");
+    const tokenEl = document.getElementById("token");
+    const postEntryEl = document.getElementById("postEntry");
+    const htmlOutputEl = document.getElementById("htmlOutput");
+    const apiOutputEl = document.getElementById("apiOutput");
+
+    const generateBtn = document.getElementById("generate");
+    const verifyTokenBtn = document.getElementById("verifyToken");
+    const publishApiBtn = document.getElementById("publishApi");
+    const copyPostBtn = document.getElementById("copyPost");
+    const copyHtmlBtn = document.getElementById("copyHtml");
+
+    function escapeHtml(input) {
+      return input
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function toParagraphs(raw) {
+      return raw
+        .split(/\r?\n\r?\n/)
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .map((p) => "<p>" + escapeHtml(p).replace(/\r?\n/g, "<br />") + "</p>")
+        .join("\n\n      ");
+    }
+
+    function buildMarkdown(title, date, content) {
+      return `# ${title}\n\n${date}\n\n${content}\n`;
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+
+    function getToken() {
+      const token = tokenEl.value.trim();
+      if (token) {
+        localStorage.setItem("blog_admin_token", token);
+      }
+      return token || localStorage.getItem("blog_admin_token") || "";
+    }
+
+    function generate() {
+      const title = titleEl.value.trim();
+      const date = dateEl.value.trim();
+      const slug = slugEl.value.trim();
+      const content = contentEl.value.trim();
+
+      if (!title || !date || !slug || !content) {
+        postEntryEl.textContent = "请先完整填写：标题、日期、slug、正文。";
+        htmlOutputEl.textContent = "请先完整填写：标题、日期、slug、正文。";
+        return;
+      }
+
+      const fileName = slug + ".md";
+      const entry = `{"title":"${title}","date":"${date}","url":"./post.html?file=./posts/${fileName}"}`;
+      const html = buildMarkdown(title, date, content);
+
+      postEntryEl.textContent = entry;
+      htmlOutputEl.textContent = html;
+    }
+
+    async function publishToAPI() {
+      const token = getToken();
+      const payload = {
+        title: titleEl.value.trim(),
+        date: dateEl.value.trim(),
+        slug: slugEl.value.trim(),
+        content: contentEl.value.trim(),
+        token
+      };
+      if (!token) {
+        apiOutputEl.textContent = "请先输入后端 Token。";
+        return;
+      }
+      if (!payload.title || !payload.date || !payload.slug || !payload.content) {
+        apiOutputEl.textContent = "请先完整填写：标题、日期、slug、正文。";
+        return;
+      }
+      apiOutputEl.textContent = "正在发布...";
+      try {
+        const res = await fetch("http://localhost:8080/api/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Admin-Token": token },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          apiOutputEl.textContent = "发布失败: " + (data.message || "unknown error");
+          return;
+        }
+        apiOutputEl.textContent = "发布成功: " + data.file + "，并已更新 posts.json";
+      } catch (err) {
+        apiOutputEl.textContent = "请求失败: 请先启动 Go 后端（go run .）";
+      }
+    }
+
+    async function verifyToken() {
+      const token = getToken();
+      if (!token) {
+        apiOutputEl.textContent = "请先输入后端 Token。";
+        return;
+      }
+      apiOutputEl.textContent = "正在验证 Token...";
+      try {
+        const res = await fetch("http://localhost:8080/api/verify-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        apiOutputEl.textContent = res.ok && data.ok ? "Token 验证通过。" : "Token 验证失败: " + (data.message || "unknown error");
+      } catch (err) {
+        apiOutputEl.textContent = "请求失败: 请先启动 Go 后端（go run .）";
+      }
+    }
+
+    generateBtn.addEventListener("click", generate);
+    verifyTokenBtn.addEventListener("click", verifyToken);
+    publishApiBtn.addEventListener("click", publishToAPI);
+    copyPostBtn.addEventListener("click", () => copyText(postEntryEl.textContent));
+    copyHtmlBtn.addEventListener("click", () => copyText(htmlOutputEl.textContent));
+
+    const savedToken = localStorage.getItem("blog_admin_token");
+    if (savedToken) tokenEl.value = savedToken;
+  </script>
+</body>
+</html>

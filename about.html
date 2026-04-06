@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About - Kirep Notes</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .about-wrap {
+      border-top: 1px solid var(--line);
+      margin-top: 6px;
+    }
+
+    .about-section {
+      padding: 12px 0 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .about-title {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .about-text {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .about-list {
+      margin: 0;
+      padding-left: 16px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .about-list li {
+      margin-bottom: 4px;
+    }
+
+    .entry-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .entry-bar input {
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 6px 8px;
+      font: inherit;
+      font-size: 0.9rem;
+      min-width: 220px;
+    }
+    .entry-btn {
+      border: 1px solid var(--line);
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 0;
+      padding: 4px 10px;
+      font-size: 0.92rem;
+      background: transparent;
+      cursor: pointer;
+    }
+    .entry-btn:hover { border-color: #4d5867; }
+    .status { margin: 0; color: var(--muted); font-size: 0.88rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap head-row">
+      <h1 class="title">About</h1>
+      <nav>
+        <a href="./index.html">Blog</a>
+        <a class="active" href="./about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="about-wrap">
+      <div class="about-section">
+        <h2 class="about-title">简介</h2>
+        <p id="bioView" class="about-text"></p>
+      </div>
+
+      <div class="about-section">
+        <h2 class="about-title">技术栈</h2>
+        <ul id="techView" class="about-list"></ul>
+      </div>
+
+      <div class="about-section">
+        <h2 class="about-title">联系方式</h2>
+        <ul id="contactView" class="about-list"></ul>
+      </div>
+
+      <div class="entry-bar">
+        <input id="token" placeholder="先输入 Token" />
+        <button id="editBtn" class="entry-btn" type="button">修改 About</button>
+      </div>
+      <p id="status" class="status">点击前会先验证 Token。</p>
+    </section>
+  </main>
+
+  <script>
+    const bioView = document.getElementById("bioView");
+    const techView = document.getElementById("techView");
+    const contactView = document.getElementById("contactView");
+    const tokenEl = document.getElementById("token");
+    const editBtn = document.getElementById("editBtn");
+    const statusEl = document.getElementById("status");
+
+    function renderList(el, items) {
+      el.innerHTML = "";
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        el.appendChild(li);
+      });
+    }
+
+    function loadAbout() {
+      fetch("./about.json")
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error("not found"))))
+        .then((data) => {
+          bioView.textContent = data.bio || "";
+          renderList(techView, data.techStack || []);
+          renderList(contactView, data.contact || []);
+        })
+        .catch(() => {
+          statusEl.textContent = "加载 about.json 失败。";
+        });
+    }
+
+    async function enterEdit() {
+      const token = tokenEl.value.trim() || localStorage.getItem("blog_admin_token") || "";
+      if (!token) {
+        statusEl.textContent = "请先输入 Token。";
+        return;
+      }
+      statusEl.textContent = "正在验证 Token...";
+      try {
+        const res = await fetch("http://localhost:8080/api/verify-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          statusEl.textContent = "Token 验证失败: " + (data.message || "unknown error");
+          return;
+        }
+        localStorage.setItem("blog_admin_token", token);
+        window.location.href = "./about-edit.html";
+      } catch (err) {
+        statusEl.textContent = "请求失败: 请先启动 Go 后端。";
+      }
+    }
+
+    const savedToken = localStorage.getItem("blog_admin_token");
+    if (savedToken) tokenEl.value = savedToken;
+
+    editBtn.addEventListener("click", enterEdit);
+    loadAbout();
+  </script>
+</body>
+</html>

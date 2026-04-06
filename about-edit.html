@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit About - Kirep Notes</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .field { margin-bottom: 10px; }
+    .field label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      min-height: 110px;
+      resize: vertical;
+    }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .small-btn {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      border-radius: 0;
+      padding: 6px 10px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+    .small-btn:hover { border-color: #4d5867; }
+    .status { margin-top: 8px; color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap head-row">
+      <h1 class="title">Edit About</h1>
+      <nav>
+        <a href="./index.html">Blog</a>
+        <a class="active" href="./about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="field">
+        <label for="bio">简介</label>
+        <textarea id="bio"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="tech">技术栈（每行一条）</label>
+        <textarea id="tech"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="contact">联系方式（每行一条）</label>
+        <textarea id="contact"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button id="saveAbout" class="small-btn" type="button">保存修改</button>
+        <a class="small-btn" href="./about.html">返回 About</a>
+      </div>
+      <p id="status" class="status">保存时会使用已验证的 Token。</p>
+    </section>
+  </main>
+
+  <script>
+    const bioEl = document.getElementById("bio");
+    const techEl = document.getElementById("tech");
+    const contactEl = document.getElementById("contact");
+    const statusEl = document.getElementById("status");
+    const saveBtn = document.getElementById("saveAbout");
+
+    function toLines(text) {
+      return text.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    }
+
+    function loadAbout() {
+      fetch("./about.json")
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error("not found"))))
+        .then((data) => {
+          bioEl.value = data.bio || "";
+          techEl.value = (data.techStack || []).join("\n");
+          contactEl.value = (data.contact || []).join("\n");
+        })
+        .catch(() => {
+          statusEl.textContent = "加载 about.json 失败。";
+        });
+    }
+
+    async function saveAbout() {
+      const token = localStorage.getItem("blog_admin_token") || "";
+      if (!token) {
+        statusEl.textContent = "未检测到已验证 Token，请先回 About 页验证。";
+        return;
+      }
+      const payload = {
+        token,
+        bio: bioEl.value.trim(),
+        techStack: toLines(techEl.value),
+        contact: toLines(contactEl.value)
+      };
+      if (!payload.bio || payload.techStack.length === 0 || payload.contact.length === 0) {
+        statusEl.textContent = "简介、技术栈、联系方式都不能为空。";
+        return;
+      }
+
+      statusEl.textContent = "正在保存...";
+      try {
+        const res = await fetch("http://localhost:8080/api/update-about", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Admin-Token": token },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          statusEl.textContent = "保存失败: " + (data.message || "unknown error");
+          return;
+        }
+        statusEl.textContent = "保存成功。";
+      } catch (err) {
+        statusEl.textContent = "请求失败: 请先启动 Go 后端。";
+      }
+    }
+
+    saveBtn.addEventListener("click", saveAbout);
+    loadAbout();
+  </script>
+</body>
+</html>

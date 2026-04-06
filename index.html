@@ -3,10 +3,130 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kirep 的博客</title>
+  <title>Blog - Kirep Notes</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <h1>Kirep 的博客</h1>
-  <p>博客已上线。</p>
+  <header>
+    <div class="wrap head-row">
+      <h1 class="title">Blog</h1>
+      <nav>
+        <a class="active" href="./index.html">Blog</a>
+        <a href="./about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <div class="view-switch">
+        <button class="switch-btn" data-view="day">日</button>
+        <button class="switch-btn active" data-view="month">月</button>
+        <button class="switch-btn" data-view="year">年</button>
+      </div>
+      <a class="upload-link" href="./admin.html">上传文章</a>
+    </div>
+
+    <div id="archive-root"></div>
+  </main>
+
+  <script>
+    const fallbackPosts = [
+      { title: "Harness 用于autoresearch", date: "2026-04-01", url: "./post.html?file=./posts/harness-autoresearch.md" },
+      { title: "Rust & Python | 世界模型", date: "2026-03-27", url: "#" },
+      { title: "关于openclaw", date: "2026-03-16", url: "#" },
+      { title: "公告", date: "2026-03-04", url: "#" },
+      { title: "计算机学习分享", date: "2026-02-04", url: "#" },
+      { title: "从接口到落地：我如何拆解一个 Feed 服务", date: "2025-12-24", url: "#" },
+      { title: "一次 CI 失败排查：定位、复现、修复", date: "2025-11-11", url: "#" }
+    ];
+
+    let posts = fallbackPosts;
+    const buttons = Array.from(document.querySelectorAll(".switch-btn"));
+    const root = document.getElementById("archive-root");
+    const params = new URLSearchParams(window.location.search);
+    let mode = params.get("view");
+    if (!["day", "month", "year"].includes(mode)) {
+      mode = "month";
+    }
+
+    function labelFor(date, type) {
+      const [y, m, d] = date.split("-");
+      if (type === "day") return y + "年" + m + "月" + d + "日";
+      if (type === "year") return y + "年";
+      return y + "年" + m + "月";
+    }
+
+    function keyFor(date, type) {
+      const [y, m, d] = date.split("-");
+      if (type === "day") return y + "-" + m + "-" + d;
+      if (type === "year") return y;
+      return y + "-" + m;
+    }
+
+    function renderList(items) {
+      const ul = document.createElement("ul");
+      ul.className = "timeline-list";
+      items.forEach((post) => {
+        const [, mm, dd] = post.date.split("-");
+        const li = document.createElement("li");
+        li.className = "timeline-item";
+        li.innerHTML =
+          '<span class="timeline-date">' + mm + "-" + dd + "</span>" +
+          '<span class="timeline-axis"></span>' +
+          '<a class="timeline-title" href="' + post.url + '">' + post.title + "</a>";
+        ul.appendChild(li);
+      });
+      return ul;
+    }
+
+    function render() {
+      root.innerHTML = "";
+      const sorted = [...posts].sort((a, b) => b.date.localeCompare(a.date));
+      const grouped = new Map();
+
+      sorted.forEach((post) => {
+        const key = keyFor(post.date, mode);
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(post);
+      });
+
+      Array.from(grouped.entries()).forEach(([key, items]) => {
+        const section = document.createElement("section");
+        section.className = "archive-group";
+        const p = document.createElement("p");
+        p.className = "archive-head";
+        p.textContent = labelFor(key, mode) + " · " + items.length + " 篇文章";
+        section.appendChild(p);
+        section.appendChild(renderList(items));
+        root.appendChild(section);
+      });
+
+      buttons.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.view === mode);
+      });
+
+      const next = new URLSearchParams(window.location.search);
+      next.set("view", mode);
+      history.replaceState(null, "", "?" + next.toString());
+    }
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        mode = btn.dataset.view;
+        render();
+      });
+    });
+
+    fetch("./posts.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("fetch failed"))))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          posts = data;
+        }
+      })
+      .catch(() => {})
+      .finally(() => render());
+  </script>
 </body>
 </html>

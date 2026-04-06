@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo 7 - 纯黑灰极简（更黑）</title>
+  <style>
+    :root {
+      --bg: #05070a;
+      --paper: #0d1117;
+      --paper-2: #090d13;
+      --text: #f0f4fa;
+      --muted: #abb3bd;
+      --line: #232a33;
+      --accent: #c9d1d9;
+      --shadow: rgba(0, 0, 0, 0.34);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", "PingFang SC", serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.75;
+    }
+
+    .wrap {
+      width: min(860px, 92%);
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 56px 0 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      letter-spacing: 0.3px;
+    }
+
+    .intro {
+      margin-top: 12px;
+      max-width: 60ch;
+      color: var(--muted);
+    }
+
+    nav {
+      margin-top: 18px;
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      opacity: 0.88;
+    }
+
+    nav a:hover {
+      opacity: 1;
+      border-color: var(--accent);
+    }
+
+    main { padding: 28px 0 72px; }
+
+    .post {
+      background: linear-gradient(180deg, var(--paper), var(--paper-2));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 26px var(--shadow);
+    }
+
+    .meta {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1.35rem;
+      color: #f0f6fc;
+    }
+
+    .back {
+      display: inline-block;
+      margin-top: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1 class="title">Kirep Notes</h1>
+      <p class="intro">聚焦工程实践、学习笔记与产品思考。更黑版本接近纯黑背景，整体更沉稳，适合低光环境阅读。</p>
+      <nav>
+        <a href="#">首页</a>
+        <a href="#">归档</a>
+        <a href="#">标签</a>
+        <a href="#">关于</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <article class="post">
+      <p class="meta">2026-04-06 · Go / Backend</p>
+      <h2>从接口到落地：我如何拆解一个 Feed 服务</h2>
+      <p>记录了从领域建模、缓存策略到数据一致性的完整思路，适合回顾服务端设计的关键步骤。</p>
+    </article>
+
+    <article class="post">
+      <p class="meta">2026-04-03 · DevOps</p>
+      <h2>一次 CI 失败排查：定位、复现、修复</h2>
+      <p>把一次真实故障整理为可复用流程，核心是先建立最小可复现，再追踪关键日志信号。</p>
+    </article>
+
+    <a class="back" href="./index.html">返回当前首页</a>
+  </main>
+</body>
+</html>

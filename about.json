@@ -1,0 +1,12 @@
+{
+  "bio": "你好，我是 Kirep，专注后端开发与工程实践，主要记录服务设计、稳定性治理与开发复盘。",
+  "techStack": [
+    "Go / API 设计 / 微服务",
+    "MySQL / Redis / RabbitMQ",
+    "Docker / CI / 自动化测试"
+  ],
+  "contact": [
+    "GitHub: https://github.com/Kirep-06",
+    "Email: your-email@example.com"
+  ]
+}
